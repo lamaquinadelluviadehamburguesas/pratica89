@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button, Spinner } from "react-bootstrap";
+import { Container, Row, Col, Button, Alert } from "react-bootstrap";
 import { supabase } from "../database/supabaseconfig";
 import ModalRegistroCategoria from "../components/categorias/ModalRegistroCategoria";
 import ModalEdicionCategoria from "../components/categorias/ModalEdicionCategoria";
 import ModalEliminacionCategoria from "../components/categorias/ModalEliminacionCategoria";
 import NotificacionOperacion from "../components/NotificacionOperacion";
+import TarjetaCategoria from "../components/categorias/TarjetaCategoria";
+import TablaCategorias from "../components/categorias/TablaCategorias";
+import CuadroBusquedas from "../components/busquedas/CuadroBusquedas";
+import Paginacion from "../components/Paginacion";
 const Categorias = () => {
   const [toast, setToast] = useState({ mostrar: false, mensaje: "", tipo: "" });
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -18,6 +22,10 @@ const Categorias = () => {
     descripcion_categoria: "",
   });
   const [categoriaAEliminar, setCategoriaAEliminar] = useState(null);
+  const [textoBusqueda, setTextoBusqueda] = useState("");
+  const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
+  const [registrosPorPagina, establecerRegistrosPorPagina] = useState(5);
+  const [paginaActual, establecerPaginaActual] = useState(1);
 
   const [nuevaCategoria, setNuevaCategoria] = useState({
     nombre_categoria: "",
@@ -46,7 +54,7 @@ const Categorias = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("categorias")
         .insert([
           {
@@ -109,6 +117,8 @@ const Categorias = () => {
         });
         return;
       }
+
+      console.log("Categorias cargadas:", data);
 
       setCategorias(data || []);
     } catch (err) {
@@ -213,6 +223,51 @@ const Categorias = () => {
     cargarCategorias();
   }, []);
 
+  useEffect(() => {
+    if (!textoBusqueda.trim()) {
+      setCategoriasFiltradas(categorias);
+      return;
+    }
+
+    const textoLower = textoBusqueda.toLowerCase().trim();
+    const filtradas = categorias.filter(
+      (cat) =>
+        cat.nombre_categoria?.toLowerCase().includes(textoLower) ||
+        cat.descripcion_categoria?.toLowerCase().includes(textoLower)
+    );
+
+    setCategoriasFiltradas(filtradas);
+  }, [textoBusqueda, categorias]);
+
+  useEffect(() => {
+    const totalPaginas = Math.max(
+      1,
+      Math.ceil(categoriasFiltradas.length / registrosPorPagina)
+    );
+    if (paginaActual > totalPaginas) {
+      establecerPaginaActual(totalPaginas);
+    }
+  }, [categoriasFiltradas, registrosPorPagina, paginaActual]);
+
+  const manejarBusqueda = (e) => {
+    setTextoBusqueda(e.target.value);
+  };
+
+  const abrirModalEdicion = (categoria) => {
+    setCategoriaEditar(categoria);
+    setMostrarModalEdicion(true);
+  };
+
+  const abrirModalEliminacion = (categoria) => {
+    setCategoriaAEliminar(categoria);
+    setMostrarModalEliminacion(true);
+  };
+
+  const categoriasPaginadas = categoriasFiltradas.slice(
+    (paginaActual - 1) * registrosPorPagina,
+    paginaActual * registrosPorPagina
+  );
+
   return (
     <Container className="mt-3">
       <Row className="align-items-center mb-3">
@@ -230,6 +285,46 @@ const Categorias = () => {
       </Row>
 
       <hr />
+
+      <Row className="mb-4">
+        <Col md={6} lg={5}>
+          <CuadroBusquedas
+            textoBusqueda={textoBusqueda}
+            manejarCambioBusqueda={manejarBusqueda}
+            placeholder="Buscar por nombre o descripción..."
+          />
+        </Col>
+      </Row>
+
+      {!!textoBusqueda.trim() && categoriasFiltradas.length === 0 && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="info" className="text-center">
+              <i className="bi bi-info-circle me-2"></i>
+              No se encontraron categorías que coincidan con "{textoBusqueda}".
+            </Alert>
+          </Col>
+        </Row>
+      )}
+
+      {!cargando && categoriasFiltradas.length > 0 && (
+        <Row>
+          <Col xs={12} sm={12} md={12} className="d-lg-none">
+            <TarjetaCategoria
+              categorias={categoriasPaginadas}
+              abrirModalEdicion={abrirModalEdicion}
+              abrirModalEliminacion={abrirModalEliminacion}
+            />
+          </Col>
+          <Col lg={12} className="d-none d-lg-block">
+            <TablaCategorias
+              categorias={categoriasPaginadas}
+              abrirModalEdicion={abrirModalEdicion}
+              abrirModalEliminacion={abrirModalEliminacion}
+            />
+          </Col>
+        </Row>
+      )}
 
       <ModalRegistroCategoria
         mostrarModal={mostrarModal}
@@ -260,6 +355,16 @@ const Categorias = () => {
         tipo={toast.tipo}
         onCerrar={() => setToast({ ...toast, mostrar: false })}
       />
+
+      {categoriasFiltradas.length > 0 && (
+        <Paginacion
+          registrosPorPagina={registrosPorPagina}
+          totalRegistros={categoriasFiltradas.length}
+          paginaActual={paginaActual}
+          establecerPaginaActual={establecerPaginaActual}
+          establecerRegistrosPorPagina={establecerRegistrosPorPagina}
+        />
+      )}
     </Container>
   );
 };
