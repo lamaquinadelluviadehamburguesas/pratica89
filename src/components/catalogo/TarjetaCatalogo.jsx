@@ -1,153 +1,99 @@
+import React, { useState } from 'react';
+import { Card, Modal, Button } from 'react-bootstrap';
 
-import React, { useState, useEffect, useCallback} from "react";
-import { Card, row, Col, ButtonGroup } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
-
-
-const TarjetaCatalogo = ({
-  categorias,
-abrirModalEdiccion,
-abrirModalEliminar,
-}) => {
-
+const TarjetaCatalogo = ({ producto, onVerDetalle }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [descripcionCorta, setDescripcionCorta] = useState(true);
+  
+  const maxLongitud = 80;
+  
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+  
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+  
+  const truncarDescripcion = (texto) => {
+    if (texto.length <= maxLongitud) return texto;
+    return texto.substring(0, maxLongitud) + '...';
+  };
+  
   return (
     <>
+      {/* Estructura de la tarjeta */}
+      <Card className="h-100 shadow-sm">
+        {/* Visualización de la imagen del producto */}
+        <Card.Img 
+          variant="top" 
+          src={producto.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'} 
+          alt={producto.nombre}
+          style={{ height: '200px', objectFit: 'cover' }}
+        />
+        
+        {/* Cuerpo de la tarjeta */}
+        <Card.Body>
+          <Card.Title>{producto.nombre}</Card.Title>
+          <Card.Text>
+            {descripcionCorta 
+              ? truncarDescripcion(producto.descripcion) 
+              : producto.descripcion}
+          </Card.Text>
+          <Card.Text className="text-primary fw-bold">
+            ${producto.precio?.toFixed(2) || '0.00'}
+          </Card.Text>
+          <Button 
+            variant="primary" 
+            onClick={handleOpenModal}
+          >
+            Ver detalles
+          </Button>
+        </Card.Body>
+      </Card>
+      
+      {/* Modal para mostrar detalles completos */}
+      <Modal show={showModal} onHide={handleCloseModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{producto.nombre}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="row">
+            <div className="col-md-6">
+              <img 
+                src={producto.imagen || 'https://via.placeholder.com/400x300?text=Sin+Imagen'} 
+                alt={producto.nombre}
+                className="img-fluid rounded"
+              />
+            </div>
+            <div className="col-md-6">
+              <h5>Descripción completa</h5>
+              <p>{producto.descripcion}</p>
+              <h5>Precio</h5>
+              <p className="text-primary fw-bold fs-4">${producto.precio?.toFixed(2) || '0.00'}</p>
+              {producto.categoria && (
+                <>
+                  <h5>Categoría</h5>
+                  <p>{producto.categoria}</p>
+                </>
+              )}
+              {producto.stock !== undefined && (
+                <>
+                  <h5>Stock disponible</h5>
+                  <p>{producto.stock} unidades</p>
+                </>
+              )}
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
-  )
+  );
 };
 
 export default TarjetaCatalogo;
-
-const [cargando, setCargando] = useState(true);
-const [idTarjetaActiva, setIdTarjetaActiva] = useState(null);
-
-useEffect(() => {
-  setCargando(!(categorias && categorias.length > 0));
-}, [categorias]);
-
-const manejartarjetaClick = useCallback((evento) => {
-  if (evento.key === "Enter" ) setIdTarjetaActiva(null);
-}, []);
-
-useEffect(() => {
-  window.addEventListener("keydown", manejarTeclaEscape);
-  return() => {
-    window.removeEventListener("keydown", manejarTeclaEscape);
-  };
-}, [,manejarTeclaEscape]);
-
-const alterarTarjetaActiva = (id) => {
-  setIdTarjetaActiva((anteriorId) => (anteriorId === id ? null : id));
-};
-
-{cargando ? (
-  <div className="text-center my-5">
-    <h5>Cargando categorías...</h5>
-    <Spinner animation="border" variant="success" role="status" />
-  </div>
-) : (
-  <div>
-    {categorias.map((categoria) => {
-      const tarjetaActiva = idTarjetaActiva === categoria.id_categoria;
-
-      return (
-        <Card
-          key={categoria.id_categoria}
-          className="mb-3 border-0 rounded-3 shadow-sm w-100 tarjeta-categoria-contenedor"
-          onClick={() => alternarTarjetaActiva(categoria.id_categoria)}
-          tabIndex={0}
-          onKeyDown={(evento) => {
-            if (evento.key === "Enter" || evento.key === " ") {
-              evento.preventDefault();
-              alternarTarjetaActiva(categoria.id_categoria);
-            }
-          }}
-          aria-label={`Categoría ${categoria.nombre_categoria}`}
-        >
-          <Card.Body
-            className={`p-2 tarjeta-categoria-cuerpo ${
-              tarjetaActiva
-                ? "tarjeta-categoria-cuerpo-activo"
-                : "tarjeta-categoria-cuerpo-inactivo"
-            }`}
-          >
-            <Row className="align-items-center gx-3">
-              <Col xs={2} className="px-2">
-                <div
-                  className="bg-light d-flex align-items-center justify-content-center rounded tarjeta-categoria-placeholder-imagen"
-                >
-                  <i className="bi bi-bookmark text-muted fs-3"></i>
-                </div>
-              </Col>
-
-              <Col xs={5} className="text-start">
-                <div className="fw-semibold text-truncate">
-                  {categoria.nombre_categoria}
-                </div>
-                <div className="small text-muted text-truncate">
-                  {categoria.descripcion_categoria}
-                </div>
-              </Col>
-
-               <Col xs={12} sm={12} md={12} className="d-lg-none">
-               <TarjetaCatalogo
-                  categoria={categoria}
-                  abrirModalEdiccion={abrirModalEdiccion}
-                  abrirModalEliminacion={abrirModalEliminacion}
-                />  
-              </Col>
-
-              <Col
-                xs={5}
-                className="d-flex flex-column align-items-end justify-content-center text-end"
-              >
-                <div className="fw-semibold small">Activa</div>
-              </Col>
-            </Row>
-          </Card.Body>
-
-          {tarjetaActiva && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIdTarjetaActiva(null);
-              }}
-              className="tarjeta-categoria-capa"
-            >
-              <div
-                className="d-flex gap-2 tarjeta-categoria-botones-capa"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button
-                  variant="outline-warning"
-                  size="sm"
-                  onClick={() => {
-                    abrirModalEdicion(categoria);
-                    setIdTarjetaActiva(null);
-                  }}
-                  aria-label={`Editar ${categoria.nombre_categoria}`}
-                >
-                  <i className="bi bi-pencil"></i>
-                </Button>
-
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => {
-                    abrirModalEliminacion(categoria);
-                    setIdTarjetaActiva(null);
-                  }}
-                  aria-label={`Eliminar ${categoria.nombre_categoria}`}
-                >
-                  <i className="bi bi-trash"></i>
-                </Button>
-              </div>
-            </div>
-          )}
-        </Card>
-      );
-    })}
-  </div>
-)}

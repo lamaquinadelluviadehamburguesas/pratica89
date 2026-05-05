@@ -1,43 +1,51 @@
-import { useEffect, useState } from "react";
-import { Toast, ToastContainer } from "react-bootstrap";
+import React, { useState, useEffect } from 'react';
+import { Toast, ToastContainer } from 'react-bootstrap';
 
-const NotificacionOperacion = ({ mostrar, mensaje, tipo, onCerrar }) => {
+const NotificacionOperacion = ({ mostrar, tipo, mensaje, onCerrar }) => {
   const [visible, setVisible] = useState(mostrar);
 
   useEffect(() => {
     setVisible(mostrar);
   }, [mostrar]);
 
-  const fechaLocal = () => {
-    const f = new Date();
-    const fecha = new Date(f);
-    const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dia = String(fecha.getDate()).padStart(2, "0");
-    return `${dia}/${mes}/${anio} ${fecha.toTimeString().slice(0, 5)}`;
+  const getBackgroundColor = () => {
+    switch (tipo) {
+      case 'exito': return 'success';
+      case 'advertencia': return 'warning';
+      case 'error': return 'danger';
+      default: return 'info';
+    }
+  };
+
+  const getIcono = () => {
+    switch (tipo) {
+      case 'exito': return 'bi-check-circle-fill';
+      case 'advertencia': return 'bi-exclamation-triangle-fill';
+      case 'error': return 'bi-x-circle-fill';
+      default: return 'bi-info-circle-fill';
+    }
+  };
+
+  const fechaHora = () => {
+    const ahora = new Date();
+    return `${ahora.getDate().toString().padStart(2, '0')}-${(ahora.getMonth() + 1).toString().padStart(2, '0')}-${ahora.getFullYear()} ${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
   };
 
   return (
-    <ToastContainer position="top-center" className="p-2">
-      <Toast
-        onClose={() => {
-          setVisible(false);
-          onCerrar();
-        }}
-        show={visible}
-        delay={2500}
-        autohide
-        bg={tipo === "exito" ? "success" : tipo === "advertencia" ? "warning" : "danger"}
+    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
+      <Toast 
+        show={visible} 
+        onClose={() => { setVisible(false); onCerrar(); }} 
+        delay={2500} 
+        autohide 
+        bg={getBackgroundColor()}
       >
         <Toast.Header>
-          <strong className="me-auto">
-            {tipo === "exito" ? "✅ Éxito" : tipo === "advertencia" ? "⚠️ Advertencia" : "❌ Error"}
-          </strong>
-          <small>{fechaLocal()}</small>
+          <i className={`${getIcono()} me-2`}></i>
+          <strong className="me-auto">Sistema</strong>
+          <small>{fechaHora()}</small>
         </Toast.Header>
-        <Toast.Body className={tipo === "exito" || tipo === "error" ? "text-white" : ""}>
-          {mensaje}
-        </Toast.Body>
+        <Toast.Body className="text-white">{mensaje}</Toast.Body>
       </Toast>
     </ToastContainer>
   );

@@ -26,7 +26,7 @@ const ModalEdicionCategoria = ({
       centered
     >
       <Modal.Header closeButton>
-        <Modal.Title>Editar Categoria</Modal.Title>
+        <Modal.Title>Editar Categoría</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
@@ -41,14 +41,14 @@ const ModalEdicionCategoria = ({
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Descripcion</Form.Label>
+            <Form.Label>Descripción</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
               name="descripcion_categoria"
               value={categoriaEditar?.descripcion_categoria || ""}
               onChange={manejoCambioInputEdicion}
-              placeholder="Ingresa la descripcion"
+              placeholder="Ingresa la descripción"
             />
           </Form.Group>
         </Form>
@@ -60,7 +60,7 @@ const ModalEdicionCategoria = ({
         <Button
           variant="primary"
           onClick={handleActualizar}
-          disabled={(categoriaEditar?.nombre_categoria || "").trim() === "" || deshabilitado}
+          disabled={!categoriaEditar?.nombre_categoria?.trim() || deshabilitado}
         >
           Actualizar
         </Button>

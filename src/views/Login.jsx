@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import FormularioLogin from "../components/login/FormularioLogin";
 import { supabase } from "../database/supabaseconfig";
+import { Container } from "react-bootstrap";
 
 const Login = () => {
   const [usuario, setUsuario] = useState("");
